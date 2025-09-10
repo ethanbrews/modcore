@@ -34,4 +34,3 @@ jobs:
       # Build using make
       - name: Build
         run: make build
-S
