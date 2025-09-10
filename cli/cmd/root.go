@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"log"
+	"log/slog"
 	"modcore/cli/ipc"
 	pb "modcore/proto/gen"
 
@@ -10,6 +11,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
+
+var Log *slog.Logger
 
 type ContextValues struct {
 	Connection           *pb.ModCoreClient
@@ -39,6 +42,7 @@ func logConnectionFailed(err error) {
 var (
 	verbose bool
 	socket  string
+	conn    *grpc.ClientConn
 )
 
 var rootCmd = &cobra.Command{
@@ -58,25 +62,27 @@ var rootCmd = &cobra.Command{
 			socket = ipc.GetSocketPath()
 		}
 
-		conn, err := grpc.NewClient(
+		var err error
+		conn, err = grpc.NewClient(
 			socket,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithContextDialer(ipc.SocketDialer()))
 		if err != nil {
 			log.Fatalf("failed to connect: %v", err)
 		}
-		defer func(conn *grpc.ClientConn) {
-			err := conn.Close()
-			if err != nil {
-				log.Fatalf("failed to close connection: %v", err)
-			}
-		}(conn)
 
 		client := pb.NewModCoreClient(conn)
 
 		cmd.SetContext(withValues(cmd.Context(), &client, verbose))
 
 		return nil
+	},
+
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		err := conn.Close()
+		if err != nil {
+			Log.Error("failed to close connection: %v", err)
+		}
 	},
 }
 

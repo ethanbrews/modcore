@@ -3,6 +3,7 @@ package ipc
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net"
 	"os"
 	"path/filepath"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/natefinch/npipe"
 )
+
+var Log *slog.Logger
 
 func GetSocketPath() string {
 	// Get the directory where the executable is located
@@ -31,7 +34,7 @@ func GetSocketPath() string {
 
 func SocketDialer() func(ctx context.Context, addr string) (net.Conn, error) {
 	return func(ctx context.Context, addr string) (net.Conn, error) {
-		log.Println("Dialing ", addr)
+		Log.Debug("Dialing ", addr)
 		timeout := 5 * time.Second
 		if deadline, ok := ctx.Deadline(); ok {
 			timeout = time.Until(deadline)

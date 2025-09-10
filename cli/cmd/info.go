@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 	pb "modcore/proto/gen"
 
 	"github.com/spf13/cobra"
@@ -18,7 +18,6 @@ var infoCmd = &cobra.Command{
 			logConnectionFailed(err)
 			return
 		}
-
-		log.Printf("Response: %s ; %s ; %s", resp.ApiVersion, resp.CoreVersion, resp.Build)
+		fmt.Printf("modcore\nApi Version: %s\nCore Version: %s\nBuild: %s\n", resp.ApiVersion, resp.CoreVersion, resp.Build)
 	},
 }

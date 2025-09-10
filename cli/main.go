@@ -1,42 +1,19 @@
 package main
 
 import (
-	"context"
-	"log"
+	"log/slog"
+	"modcore/cli/cmd"
 	"modcore/cli/ipc"
-	"time"
-
-	pb "modcore/proto/gen"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"os"
 )
 
+var logger *slog.Logger
+
 func main() {
-	conn, err := grpc.NewClient(
-		ipc.getSocketPath(),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithContextDialer(ipc.SocketDialer()))
-	if err != nil {
-		log.Fatalf("failed to connect: %v", err)
+	logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
+	ipc.Log = logger
+	cmd.Log = logger
+	if err := cmd.Execute(); err != nil {
+		logger.Error("%v", err)
 	}
-	defer func(conn *grpc.ClientConn) {
-		err := conn.Close()
-		if err != nil {
-			log.Fatalf("failed to close connection: %v", err)
-		}
-	}(conn)
-
-	client := pb.NewModCoreClient(conn)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
- 
-	resp, err := client.CoreInfo(ctx, &pb.Empty{})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
-
-	log.Printf("Response: %s ; %s ; %s", resp.ApiVersion, resp.CoreVersion, resp.Build)
-
 }
